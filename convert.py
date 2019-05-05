@@ -20,11 +20,12 @@ from keras.models import Model
 from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model as plot
 
-
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
-parser.add_argument('config_path', help='Path to Darknet cfg file.')
-parser.add_argument('weights_path', help='Path to Darknet weights file.')
-parser.add_argument('output_path', help='Path to output Keras model file.')
+parser.add_argument('config_path', default="yolov3.cfg", help='Path to Darknet cfg file.')
+parser.add_argument('weights_path', default="yolov3.weights", help='Path to Darknet weights file.')
+parser.add_argument('input_size', default=320, type=int,
+                    help='Yolo input size, single integer, must be an integer multiple of 32')
+parser.add_argument('output_path', default="model_data/yolov3.h5", help='Path to output Keras model file.')
 parser.add_argument(
     '-p',
     '--plot_model',
@@ -54,14 +55,17 @@ def unique_config_sections(config_file):
     output_stream.seek(0)
     return output_stream
 
+
 # %%
 def _main(args):
     config_path = os.path.expanduser(args.config_path)
     weights_path = os.path.expanduser(args.weights_path)
+    input_size = args.input_size
     assert config_path.endswith('.cfg'), '{} is not a .cfg file'.format(
         config_path)
     assert weights_path.endswith(
         '.weights'), '{} is not a .weights file'.format(weights_path)
+    assert (input_size % 32 == 0), '{} is not an multiple of 32'.format(input_size)
 
     output_path = os.path.expanduser(args.output_path)
     assert output_path.endswith(
@@ -84,8 +88,8 @@ def _main(args):
     cfg_parser = configparser.ConfigParser()
     cfg_parser.read_file(unique_config_file)
 
-    print('Creating Keras model.')
-    input_layer = Input(shape=(None, None, 3))
+    print('Creating Keras model, input size'.format(input_size))
+    input_layer = Input(shape=(input_size, input_size, 3))
     prev_layer = input_layer
     all_layers = []
 
